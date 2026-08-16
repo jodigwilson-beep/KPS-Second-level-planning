@@ -171,6 +171,7 @@
   }
   td.subject-cell.stripe-b{background:#F0EAD8;}
   .li-row td.subject-cell{border-bottom:none; padding-bottom:4px;}
+  .bge-li-row td.subject-cell, .bge-li-row td.cell{border-bottom:2px solid var(--paper-line);}
   .ca-row td.subject-cell{padding-top:4px; font-size:12px; font-weight:400; opacity:0.85;}
   .li-label{display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--ochre); margin-top:2px;}
   td.cell{
@@ -516,7 +517,8 @@ function goto(view){
 /* ============ PLANNER ============ */
 const SUBJECTS = [
   "Ethos and Life of the School",
-  "Health and Wellbeing / RME",
+  "Health and Wellbeing",
+  "RME",
   "P.E",
   "Numeracy (Big Maths CLIC)",
   "Mathematics",
@@ -924,7 +926,7 @@ const ETHOS_SEED = {
 };
 
 const RME_SEED = {
-  "Health and Wellbeing / RME": {
+  "Health and Wellbeing": {
     "Relationships": [
       "I understand that a wide range of different kinds of friendships and relationships exist. (HWB 2-44a)",
       "I am identifying and practising skills to manage changing relationships and I understand the positive impact this can have on my emotional wellbeing. (HWB 2-45a)",
@@ -1034,7 +1036,43 @@ const BUNDLE2_SPLIT_SEED = {
     "I can explain core programming language concepts in appropriate technical language. (TCH 2-14a)",
     "I understand how information is stored and how key components of computing technology connect and interact through networks. (TCH 2-14b)",
     "I can create, develop and evaluate computing solutions in response to a design challenge. (TCH 2-15a)"
-  ]
+  ],
+  "Metaskills": {
+    "Developing the Young Workforce": [
+      "I can discuss the relevance of skills to the wider world and make connections between skills and the world of work.",
+      "I can explain to others my ambitions/what I would like to do and look for ways to achieve them.",
+      "I can recognise the skills I have and need for work.",
+      "I can apply my skills to get more information about jobs/careers.",
+      "I can use online tools available to me.",
+      "I own and can manage my profile and can use it to help me discuss my interests, strengths and skills with my parents/carers and others.",
+      "I can identify people in my network who help me broaden my horizons.",
+      "I believe I can maximise my potential in any type of work.",
+      "I can identify different types of enterprise opportunities and engage in them."
+    ],
+    "Creativity": [
+      "I can use my creativity and knowledge of different subjects to contribute ideas and make things on my own and in groups.",
+      "I can make links between my hobbies and interests and the things I learn in school.",
+      "I can use my skills to set and achieve goals in and out of school that are ambitious for me.",
+      "I can pose interesting questions and constructively challenge ideas that are presented to me.",
+      "I can discuss the relevance of creativity to the wider world and make connections between creativity skills and the world of work.",
+      "I can recognise the creativity skills I have and need for learning, life and work.",
+      "I can explain that creativity and enterprise skills are needed in a wide range of jobs.",
+      "I can identify and engage in different types of enterprise opportunity where I can demonstrate my creativity.",
+      "I believe I have potential to be creative, enterprising and successful.",
+      "I can make good use of earlier knowledge to generate ideas and solutions.",
+      "I can identify problems and research in different ways to find solutions including using online tools.",
+      "I can persist with things I find difficult because I know and understand the purpose."
+    ],
+    "Sustainability": [
+      "Economic",
+      "Social justice",
+      "Human Rights",
+      "Global Citizenship",
+      "Environmental - ecological limits of our planet",
+      "Democratic participation",
+      "Vision for Scotland 2030"
+    ]
+  }
 };
 
 const MLAN_SEED = {
@@ -1469,8 +1507,19 @@ function renderBgeView(){
       </th>
     `).join('');
 
+  const bgeLiSubject = liSubjectKey(BGE_SUBJECT);
+  const liCells = c.weeks.map((w,wi)=>{
+    const text = c.cells[cellKey(bgeLiSubject,wi)] || "";
+    const cls = text ? "cell-inner filled" : "cell-inner empty";
+    return `<td class="cell"><div class="${cls}" data-subject="${escapeAttr(bgeLiSubject)}" data-wi="${wi}">${text ? escapeHtml(text) : "+ add"}</div></td>`;
+  }).join('');
+  const liRow = `<tr class="bge-li-row">
+    <td class="subject-cell">Learning Intention<span class="bank-link" data-subject="${escapeAttr(bgeLiSubject)}">Manage bank →</span></td>
+    ${liCells}
+  </tr>`;
+
   const body = document.getElementById('bgeBodyRows');
-  body.innerHTML = BGE_SPLIT_SUBJECTS.map(subject=>{
+  const subjectRows = BGE_SPLIT_SUBJECTS.concat(["Metaskills"]).map(subject=>{
     const cells = c.weeks.map((w,wi)=>{
       const text = c.cells[cellKey(subject,wi)] || "";
       const cls = text ? "cell-inner filled" : "cell-inner empty";
@@ -1481,6 +1530,7 @@ function renderBgeView(){
       ${cells}
     </tr>`;
   }).join('');
+  body.innerHTML = liRow + subjectRows;
 
   body.querySelectorAll('.cell-inner').forEach(el=>{
     el.addEventListener('click', ()=>openCellEditor(el.dataset.subject, parseInt(el.dataset.wi)));
@@ -2185,7 +2235,7 @@ document.getElementById('loadLiteracyBtn').addEventListener('click', ()=>{
   persist();
   render();
   alert(added > 0
-    ? `Added ${added} outcomes across your subject banks (Literacy, Numeracy, Mathematics, P.E, Health and Wellbeing/RME, Expressive Arts, Sciences, Social Studies, Technologies, 1+2).`
+    ? `Added ${added} outcomes across your subject banks (Literacy, Numeracy, Mathematics, P.E, Health and Wellbeing, Expressive Arts, Sciences, Social Studies, Technologies, Metaskills, 1+2).`
     : "Your subject banks already have all of this content.");
 });
 
