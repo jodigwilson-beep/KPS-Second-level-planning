@@ -1891,11 +1891,12 @@ async function downloadWordDoc(){
   const MARGIN = 720; // Word's standard "Narrow" preset (0.5in)
   const PAGE_LONG = 16838;
   const PAGE_SHORT = 11906;
-  const TOTAL_WIDTH = 14000;
+  const TOTAL_WIDTH = PAGE_LONG - MARGIN * 2; // full usable page width in landscape
   const SUBJECT_COL = 2400;
   const weekColWidth = Math.floor((TOTAL_WIDTH - SUBJECT_COL) / 5);
   const actualTotal = SUBJECT_COL + weekColWidth * 5;
   const CELL_MARGINS = { top: 40, bottom: 40, left: 80, right: 80 };
+  const FONT = "Arial";
 
   function cell(text, opts={}){
     return new TableCell({
@@ -1906,7 +1907,7 @@ async function downloadWordDoc(){
       margins: CELL_MARGINS,
       children: [new Paragraph({
         alignment: opts.center ? AlignmentType.CENTER : AlignmentType.LEFT,
-        children: [new TextRun({ text: text || "", bold: !!opts.bold, size: opts.size || 18 })]
+        children: [new TextRun({ text: text || "", bold: !!opts.bold, size: opts.size || 18, font: FONT })]
       })]
     });
   }
@@ -1934,30 +1935,30 @@ async function downloadWordDoc(){
       const isShaded = false;
       const fill = isShaded ? GREY : undefined;
 
-      if(!SINGLE_ROW_SUBJECTS_EXPORT.has(subject)){
+      if(SINGLE_ROW_SUBJECTS_EXPORT.has(subject)){
+        const rowCells = [cell(subject, {width: SUBJECT_COL, fill, bold:true, size:17})];
+        let wi = weekStart;
+        while(wi <= weekEnd){
+          const text = getExportCellText(c, subject, wi);
+          let span = 1;
+          while(wi + span <= weekEnd && getExportCellText(c, subject, wi + span) === text) span++;
+          rowCells.push(cell(text, {width: weekColWidth*span, span, fill, size:17}));
+          wi += span;
+        }
+        rows.push(new TableRow({ children: rowCells }));
+      } else {
         const liSubject = liSubjectKey(subject);
-        const liRowCells = [cell(subject + " — Learning Intention", {width: SUBJECT_COL, fill: cycleLightHex, bold:true, size:16})];
+        const liRowCells = [cell(subject, {width: SUBJECT_COL, fill, bold:true, size:17})];
         let liwi = weekStart;
         while(liwi <= weekEnd){
           const liText = c.cells[cellKey(liSubject, liwi)] || "";
           let span = 1;
           while(liwi + span <= weekEnd && (c.cells[cellKey(liSubject, liwi + span)] || "") === liText) span++;
-          liRowCells.push(cell(liText, {width: weekColWidth*span, span, fill: cycleLightHex, size:16}));
+          liRowCells.push(cell(liText, {width: weekColWidth*span, span, fill, size:17}));
           liwi += span;
         }
         rows.push(new TableRow({ children: liRowCells }));
       }
-
-      const rowCells = [cell(subject, {width: SUBJECT_COL, fill, bold:true, size:17})];
-      let wi = weekStart;
-      while(wi <= weekEnd){
-        const text = getExportCellText(c, subject, wi);
-        let span = 1;
-        while(wi + span <= weekEnd && getExportCellText(c, subject, wi + span) === text) span++;
-        rowCells.push(cell(text, {width: weekColWidth*span, span, fill, size:17}));
-        wi += span;
-      }
-      rows.push(new TableRow({ children: rowCells }));
     });
     return new Table({
       width: { size: actualTotal, type: WidthType.DXA },
